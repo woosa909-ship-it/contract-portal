@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전자계약 요청 이력 조회</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f4f5f7;--surface:#fff;--border:#e2e5ea;
+  --text:#1a1d23;--sub:#6b7280;--hint:#9ca3af;
+  --primary:#1e50c8;--primary-h:#1840a8;--danger:#dc2626;
+  --legal-bg:#eff6ff;--legal-tx:#1d4ed8;--legal-bd:#bfdbfe;
+  --finance-bg:#f0fdf4;--finance-tx:#15803d;--finance-bd:#bbf7d0;
+  --hr-bg:#fdf4ff;--hr-tx:#7e22ce;--hr-bd:#e9d5ff;
+  --r:8px;--rl:12px;
+}
+html,body{font-family:'Noto Sans KR',sans-serif;font-size:14px;color:var(--text);background:var(--bg);min-height:100vh}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.logo{font-size:16px;font-weight:700}.logo span{color:var(--primary)}
+.user-info{font-size:13px;color:var(--sub);display:flex;align-items:center;gap:8px}
+.logout-btn{padding:4px 12px;font-size:12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;color:var(--text)}
+
+/* 로그인 */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:36px 32px;width:360px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.login-card h2{font-size:18px;font-weight:700;margin-bottom:6px}
+.login-card p{font-size:13px;color:var(--sub);margin-bottom:24px}
+.dept-btn-wrap{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.dept-login-btn{padding:12px;font-size:14px;font-weight:500;border-radius:var(--r);border:1px solid;cursor:pointer;font-family:inherit;transition:all .15s}
+.dept-login-btn.legal{background:var(--legal-bg);color:var(--legal-tx);border-color:var(--legal-bd)}
+.dept-login-btn.finance{background:var(--finance-bg);color:var(--finance-tx);border-color:var(--finance-bd)}
+.dept-login-btn.hr{background:var(--hr-bg);color:var(--hr-tx);border-color:var(--hr-bd)}
+.dept-login-btn.admin{background:#1e293b;color:#fff;border-color:#1e293b}
+.dept-login-btn:hover{opacity:.85}
+.pin-wrap{display:none}
+.pin-input{width:100%;padding:10px;font-size:18px;text-align:center;letter-spacing:.4em;border:1px solid var(--border);border-radius:var(--r);margin-bottom:12px;font-family:inherit;outline:none}
+.pin-input:focus{border-color:var(--primary)}
+.pin-confirm{width:100%;padding:10px;background:var(--primary);color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.pin-error{color:var(--danger);font-size:12px;margin-top:8px;min-height:18px}
+.back-btn{background:none;border:none;color:var(--sub);cursor:pointer;font-size:13px;margin-top:8px;font-family:inherit}
+
+/* 메인 */
+.main{padding:24px;max-width:1100px;margin:0 auto}
+.toolbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.toolbar-title{font-size:16px;font-weight:700;margin-right:auto}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-legal{background:var(--legal-bg);color:var(--legal-tx);border:1px solid var(--legal-bd)}
+.badge-finance{background:var(--finance-bg);color:var(--finance-tx);border:1px solid var(--finance-bd)}
+.badge-hr{background:var(--hr-bg);color:var(--hr-tx);border:1px solid var(--hr-bd)}
+.badge-admin{background:#1e293b;color:#fff}
+.filter-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:16px 20px;margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.filter-wrap select,.filter-wrap input{padding:7px 10px;font-size:13px;border:1px solid var(--border);border-radius:var(--r);font-family:inherit;outline:none;background:var(--surface);color:var(--text)}
+.filter-wrap select:focus,.filter-wrap input:focus{border-color:var(--primary)}
+.filter-label{font-size:12px;color:var(--sub);font-weight:500}
+.btn-sm{padding:7px 14px;font-size:12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;color:var(--text);font-family:inherit}
+.btn-sm:hover{background:var(--bg)}
+.btn-primary-sm{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn-primary-sm:hover{background:var(--primary-h)}
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:700px}
+thead tr{background:var(--bg);border-bottom:2px solid var(--border)}
+th{padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--sub);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f8faff}
+td{padding:11px 14px;vertical-align:middle;color:var(--text)}
+.empty{padding:48px;text-align:center;color:var(--hint);font-size:13px}
+.loading{padding:48px;text-align:center;color:var(--sub);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:16px 20px}
+.stat-label{font-size:11px;color:var(--sub);margin-bottom:4px;font-weight:500}
+.stat-value{font-size:24px;font-weight:700;color:var(--text)}
+</style>
+</head>
+<body>
+
+<!-- 로그인 화면 -->
+<div class="login-wrap" id="login-page">
+  <div class="login-card">
+    <div style="font-size:36px;margin-bottom:12px">🔐</div>
+    <h2>전자계약 이력 조회</h2>
+    <p id="login-desc">부서를 선택해 주세요</p>
+    <div class="dept-btn-wrap" id="dept-btns">
+      <button class="dept-login-btn legal" onclick="selectDept('법무')">⚖️ 법무팀</button>
+      <button class="dept-login-btn finance" onclick="selectDept('자금·회계')">💰 자금·회계팀</button>
+      <button class="dept-login-btn hr" onclick="selectDept('인사')">👥 인사팀</button>
+      <button class="dept-login-btn admin" onclick="selectDept('전체관리자')">🛡️ 전체 관리자</button>
+    </div>
+    <div class="pin-wrap" id="pin-wrap">
+      <input class="pin-input" type="password" id="pin-input" maxlength="6" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="pin-confirm" onclick="doLogin()">로그인</button>
+      <div class="pin-error" id="pin-error"></div>
+      <button class="back-btn" onclick="backToDept()">← 부서 선택으로</button>
+    </div>
+  </div>
+</div>
+
+<!-- 메인 화면 -->
+<div id="main-page" style="display:none">
+  <div class="header">
+    <div class="logo">전자계약 <span>이력 조회</span></div>
+    <div class="user-info">
+      <span id="header-badge"></span>
+      <button class="logout-btn" onclick="logout()">로그아웃</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="stats" id="stats-wrap">
+      <div class="stat-card"><div class="stat-label">전체 요청</div><div class="stat-value" id="stat-total">-</div></div>
+      <div class="stat-card"><div class="stat-label">이번 달</div><div class="stat-value" id="stat-month">-</div></div>
+      <div class="stat-card"><div class="stat-label">계약서 종류</div><div class="stat-value" id="stat-types">-</div></div>
+      <div class="stat-card"><div class="stat-label">요청 부서</div><div class="stat-value" id="stat-depts">-</div></div>
+    </div>
+    <div class="filter-wrap">
+      <div>
+        <div class="filter-label">계약서 종류</div>
+        <select id="filter-type" onchange="applyFilter()">
+          <option value="">전체</option>
+          <option>물품공급계약서 (기본)</option>
+          <option>물품공급계약서 (기타여신)</option>
+          <option>프로젝트약정서 (기본)</option>
+          <option>프로젝트약정서 직납 (EU)</option>
+          <option>물류위탁계약서</option>
+          <option>보세창고 용역계약서</option>
+          <option>판매장려금 약정서</option>
+          <option>판촉비지원 약정서</option>
+          <option>장려금 확인서</option>
+          <option>지원금 확인서</option>
+        </select>
+      </div>
+      <div>
+        <div class="filter-label">요청자</div>
+        <input type="text" id="filter-name" placeholder="이름 검색" oninput="applyFilter()" style="width:120px">
+      </div>
+      <div>
+        <div class="filter-label">거래처명</div>
+        <input type="text" id="filter-company" placeholder="거래처 검색" oninput="applyFilter()" style="width:140px">
+      </div>
+      <button class="btn-sm" onclick="resetFilter()">초기화</button>
+      <button class="btn-sm btn-primary-sm" onclick="loadData()">🔄 새로고침</button>
+    </div>
+    <div class="toolbar">
+      <span class="toolbar-title">요청 이력</span>
+      <span id="result-count" style="font-size:12px;color:var(--sub)"></span>
+    </div>
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>요청일시</th>
+            <th>요청자</th>
+            <th>부서</th>
+            <th>검토요청부서</th>
+            <th>계약서 종류</th>
+            <th>거래처명</th>
+          </tr></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <div class="loading" id="loading">데이터를 불러오는 중...</div>
+      <div class="empty" id="empty" style="display:none">📭 조회된 이력이 없습니다</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── 설정 ──────────────────────────────────────────────────
+const SHEET_ID = '1SzSW8sAT7AT2sNlu5ixd9-S30fhpGzbGwWrKD5EVxCk';
+const SHEET_NAME = '요청이력_총괄';
+
+const DEPT_CONFIG = {
+  '법무':       { pin:'1111', filter:'법무' },
+  '자금·회계':  { pin:'2222', filter:'자금·회계' },
+  '인사':       { pin:'3333', filter:'인사' },
+  '전체관리자': { pin:'0000', filter:null },
+};
+
+let currentDept = null;
+let allData = [];
+let selectedDept = null;
+
+// ── 로그인 ─────────────────────────────────────────────────
+function selectDept(dept) {
+  selectedDept = dept;
+  document.getElementById('dept-btns').style.display = 'none';
+  document.getElementById('pin-wrap').style.display = 'block';
+  document.getElementById('login-desc').textContent = `${dept} PIN을 입력하세요`;
+  document.getElementById('pin-input').focus();
+  document.getElementById('pin-error').textContent = '';
+}
+
+function backToDept() {
+  selectedDept = null;
+  document.getElementById('dept-btns').style.display = 'flex';
+  document.getElementById('pin-wrap').style.display = 'none';
+  document.getElementById('login-desc').textContent = '부서를 선택해 주세요';
+  document.getElementById('pin-input').value = '';
+}
+
+function doLogin() {
+  const pin = document.getElementById('pin-input').value;
+  const config = DEPT_CONFIG[selectedDept];
+  if (pin === config.pin) {
+    currentDept = selectedDept;
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('main-page').style.display = 'block';
+    const clsMap = {'법무':'badge-legal','자금·회계':'badge-finance','인사':'badge-hr','전체관리자':'badge-admin'};
+    const badge = document.getElementById('header-badge');
+    badge.className = 'badge ' + (clsMap[currentDept]||'badge-admin');
+    badge.textContent = currentDept;
+    loadData();
+  } else {
+    document.getElementById('pin-error').textContent = 'PIN이 올바르지 않습니다.';
+    document.getElementById('pin-input').value = '';
+  }
+}
+
+function logout() {
+  currentDept = null; selectedDept = null; allData = [];
+  document.getElementById('main-page').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('pin-input').value = '';
+  backToDept();
+}
+
+// ── 데이터 로드 ────────────────────────────────────────────
+function loadData() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('empty').style.display = 'none';
+  document.getElementById('table-body').innerHTML = '';
+
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
+
+  fetch(url)
+  .then(res => res.text())
+  .then(text => {
+    const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*?)\);/)[1]);
+    const rows = json.table.rows;
+    allData = rows.slice(1).map(row => ({
+      timestamp: row.c[0]?.v || '',
+      name:      row.c[1]?.v || '',
+      dept:      row.c[2]?.v || '',
+      targetDept:row.c[3]?.v || '',
+      contract:  row.c[4]?.v || '',
+      company:   row.c[5]?.v || '',
+    }));
+    document.getElementById('loading').style.display = 'none';
+    applyFilter();
+  })
+  .catch(() => {
+    document.getElementById('loading').textContent = '⚠️ 데이터를 불러올 수 없습니다. 구글 시트 공개 설정을 확인해 주세요.';
+  });
+}
+
+// ── 필터 & 렌더 ────────────────────────────────────────────
+function applyFilter() {
+  const filterType    = document.getElementById('filter-type').value;
+  const filterName    = document.getElementById('filter-name').value.trim().toLowerCase();
+  const filterCompany = document.getElementById('filter-company').value.trim().toLowerCase();
+  const deptFilter    = DEPT_CONFIG[currentDept]?.filter;
+
+  let filtered = allData.filter(r => {
+    if (deptFilter && !r.targetDept.includes(deptFilter)) return false;
+    if (filterType && r.contract !== filterType) return false;
+    if (filterName && !r.name.toLowerCase().includes(filterName)) return false;
+    if (filterCompany && !r.company.toLowerCase().includes(filterCompany)) return false;
+    return true;
+  });
+
+  renderTable(filtered);
+  updateStats(filtered);
+}
+
+function resetFilter() {
+  document.getElementById('filter-type').value = '';
+  document.getElementById('filter-name').value = '';
+  document.getElementById('filter-company').value = '';
+  applyFilter();
+}
+
+function renderTable(data) {
+  const tbody = document.getElementById('table-body');
+  const empty = document.getElementById('empty');
+  document.getElementById('result-count').textContent = `총 ${data.length}건`;
+
+  if (!data.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = data.map(r => `<tr>
+    <td style="color:var(--sub);white-space:nowrap">${r.timestamp}</td>
+    <td>${r.name}</td>
+    <td>${r.dept}</td>
+    <td>${r.targetDept}</td>
+    <td>${r.contract}</td>
+    <td>${r.company}</td>
+  </tr>`).join('');
+}
+
+function updateStats(data) {
+  const now = new Date();
+  const thisMonth = data.filter(r => {
+    const d = new Date(r.timestamp);
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  });
+  const types = new Set(data.map(r => r.contract)).size;
+  const depts = new Set(data.map(r => r.dept)).size;
+
+  document.getElementById('stat-total').textContent = data.length;
+  document.getElementById('stat-month').textContent = thisMonth.length;
+  document.getElementById('stat-types').textContent = types;
+  document.getElementById('stat-depts').textContent = depts;
+}
+</script>
+</body>
+</html>
